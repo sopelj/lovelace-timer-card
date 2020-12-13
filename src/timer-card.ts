@@ -83,7 +83,6 @@ export class TimerCard extends LitElement {
   }
 
   protected render(): TemplateResult | void {
-    console.log(this.icon);
     return html`
       <ha-card .header="${this._config.name}">
         <div class="timer">

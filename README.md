@@ -5,7 +5,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 ![Project Maintenance](https://img.shields.io/maintenance/yes/2020.svg?style=for-the-badge)
 
-A widget to display timers in a larger more visible way than the standard entity card whilst still displaying a realtime coutdown.
+A widget to display timers in a larger more visible maner than the standard entity card whilst still displaying a realtime countdown. None of the other options I tried would refresh the display quick enough.
 
 _Please ⭐️ this repo if you find it useful_
 
@@ -13,11 +13,12 @@ _Please ⭐️ this repo if you find it useful_
 
 ## Options
 
-| Name   | Type   | Requirement  | Description                      | Default     |
-| ------ | ------ | ------------ | -------------------------------- | ----------- |
-| type   | string | **Required** | `custom:timer-card`              |             |
-| entity | string | **Required** | Your timer entity                |             |
-| name   | string | **Optional** | Header `false` to disable        | Entity name |
+| Name   | Type   | Requirement  | Description                                | Default                  |
+| ------ | ------ | ------------ | ------------------------------------------ | ------------------------ |
+| type   | string | **Required** | `custom:timer-card`                        |                          |
+| entity | string | **Required** | Your timer entity                          |                          |
+| name   | string | **Optional** | Header. Set to `false` to disable          | Entity name              |
+| icon   | string | **Optional** | Icon to display. Set to `false` to disable | Entity icon or mdi:timer |
 
 ## Installation with Hacs
 
@@ -43,4 +44,4 @@ You can then use `yarn run lint` and then `yarn run build`
 
 This was created using the [Boilerplate Card](https://github.com/custom-cards/boilerplate-card) by [@iantrich](https://www.github.com/iantrich)
 
-Parts of this are based of the [timer card](https://github.com/custom-cards/timer-card) that doesn't seem to be maintained anymore
+Parts of this are based off the [timer card](https://github.com/custom-cards/timer-card) that doesn't seem to be maintained anymore
