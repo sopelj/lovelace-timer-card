@@ -16,8 +16,8 @@ export class TimerCard extends LitElement {
   private _handle?: number;
 
   @property() public message!: string;
+  @property() public icon?: string;
   @property() public hass!: HomeAssistant;
-  @property() private _icon = 'mdi:timer';
   @property() private _config!: TimerCardConfig;
 
   public connectedCallback(): void {
@@ -33,7 +33,10 @@ export class TimerCard extends LitElement {
     if (!config || !config.entity) {
       throw new Error('Invalid configuration');
     }
-    this._config = config;
+    this._config = {
+      ...config,
+      name: config.name === false ? undefined : config.name,
+    };
   }
 
   protected updated(changedProps: PropertyValues): void {
@@ -43,7 +46,11 @@ export class TimerCard extends LitElement {
       const stateObj = this.hass.states[this._config.entity];
       const oldHass = changedProps.get('hass') as this['hass'];
       const oldStateObj = oldHass ? oldHass.states[this._config.entity] : undefined;
-      this._icon = this._config.icon || stateIcon(stateObj);
+      if (this._config.icon !== false) {
+        this.icon = this._config.icon ? 'mdi:timer' : stateIcon(this.hass.states[this._config.entity]);
+      } else {
+        this.icon = undefined;
+      }
 
       if (oldStateObj !== stateObj) {
         this._startInterval(stateObj);
@@ -76,10 +83,15 @@ export class TimerCard extends LitElement {
   }
 
   protected render(): TemplateResult | void {
+    console.log(this.icon);
     return html`
       <ha-card .header="${this._config.name}">
         <div class="timer">
-          <ha-icon class="timer__icon" icon="${this._icon}"></ha-icon>
+          ${this.icon
+            ? html`
+                <ha-icon class="timer__icon" icon="${this.icon}"></ha-icon>
+              `
+            : ''}
           <div class="timer__message">${this.message}</div>
         </div>
       </ha-card>
