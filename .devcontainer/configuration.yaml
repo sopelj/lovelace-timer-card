@@ -1,0 +1,11 @@
+default_config:
+lovelace:
+  mode: yaml
+
+demo:
+
+# Timers
+timer:
+  tea:
+    icon: mdi:kettle-steam
+    duration: "00:04:00"

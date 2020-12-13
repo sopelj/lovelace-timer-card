@@ -1,0 +1,7 @@
+resources:
+  - url: http://127.0.0.1:5000/timer-card.js
+    type: module
+views:
+  - cards:
+      - type: custom:timer-card
+        entity: timer.tea
