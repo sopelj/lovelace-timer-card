@@ -1,8 +1,30 @@
-import { LitElement, html, customElement, property, CSSResult, PropertyValues, TemplateResult, css } from 'lit-element';
-import { secondsToDuration, timerTimeRemaining, stateIcon, HomeAssistant } from 'custom-card-helpers';
+import {
+  LitElement,
+  html,
+  customElement,
+  property,
+  CSSResult,
+  TemplateResult,
+  css,
+  internalProperty,
+  PropertyValues,
+} from 'lit-element';
+
+import {
+  secondsToDuration,
+  timerTimeRemaining,
+  durationToSeconds,
+  stateIcon,
+  HomeAssistant,
+  LovelaceCardEditor,
+} from 'custom-card-helpers';
+
 import { HassEntity } from 'home-assistant-js-websocket';
 
 import { TimerCardConfig } from './types';
+
+import './editor';
+
 
 (window as Window).customCards = (window as Window).customCards || [];
 (window as Window).customCards.push({
@@ -13,12 +35,27 @@ import { TimerCardConfig } from './types';
 
 @customElement('timer-card')
 export class TimerCard extends LitElement {
-  private _handle?: number;
+  public static async getConfigElement(): Promise<LovelaceCardEditor> {
+    return document.createElement('timer-card-editor');
+  }
 
-  @property() public message!: string;
-  @property() public icon?: string;
-  @property() public hass!: HomeAssistant;
-  @property() private _config!: TimerCardConfig;
+  public static getStubConfig(): object {
+    return {
+      entity: '',
+      icons: [{icon: 'mdi:timer', 'percent': 0}]
+    };
+  }
+
+  @property({ attribute: false }) public hass!: HomeAssistant;
+  
+  @internalProperty() private config!: TimerCardConfig;
+  @internalProperty() private message?: string;
+  @internalProperty() private icon?: string;
+  @internalProperty() private icons: Array<[number, string]> = [];
+  @internalProperty() private duration = 0;
+  @internalProperty() private iconLoopDuration = 1;
+
+  private _handle?: number = 0;
 
   public connectedCallback(): void {
     super.connectedCallback();
@@ -33,7 +70,14 @@ export class TimerCard extends LitElement {
     if (!config || !config.entity) {
       throw new Error('Invalid configuration');
     }
-    this._config = {
+    if (config.icons && config.icons.length >= 1) {
+      this.icons = config.icons.map((x): [number, string] => {
+        return [x.percent || 0, x.icon]
+      }).sort((a, b) => (a[0] > b[0]) ? -1 : 1);
+    } else {
+      this.icons = [[0, 'mdi:timer']];
+    }
+    this.config = {
       ...config,
       name: config.name === false ? undefined : config.name,
     };
@@ -43,18 +87,21 @@ export class TimerCard extends LitElement {
     super.updated(changedProps);
 
     if (changedProps.has('hass')) {
-      const stateObj = this.hass.states[this._config.entity];
+      const stateObj = this.hass.states[this.config.entity];
       const oldHass = changedProps.get('hass') as this['hass'];
-      const oldStateObj = oldHass ? oldHass.states[this._config.entity] : undefined;
-      if (this._config.icon !== false) {
-        this.icon = this._config.icon ? 'mdi:timer' : stateIcon(this.hass.states[this._config.entity]);
-      } else {
-        this.icon = undefined;
+      const oldStateObj = oldHass ? oldHass.states[this.config.entity] : undefined;
+      if (! this.icons || this.icons.length === 0) {
+        this.icons = [[0, stateIcon(this.hass.states[this.config.entity])]];
       }
 
       if (oldStateObj !== stateObj) {
+        this.duration = durationToSeconds(stateObj.attributes.duration);
+        this.iconLoopDuration = this.config.loop_duration ?? this.duration;
         this._startInterval(stateObj);
       } else if (!stateObj) {
+        this.duration = 0;
+        this.iconLoopDuration = 0;
+        this._updateIcon(-1);
         this._clearInterval();
       }
     }
@@ -74,17 +121,36 @@ export class TimerCard extends LitElement {
       this._updateRemaining(stateObj);
       this._handle = window.setInterval(() => this._updateRemaining(stateObj), 1000);
     } else {
+      this._updateIcon(-1);
       this.message = stateObj.state;
     }
   }
 
   private _updateRemaining(stateObj: HassEntity): void {
-    this.message = secondsToDuration(timerTimeRemaining(stateObj));
+    const remaining = timerTimeRemaining(stateObj);
+    this._updateIcon(remaining);
+    this.message = secondsToDuration(remaining);
+  }
+
+  private _updateIcon(remaining: number): void {
+    if (this.icons?.length === 1 || remaining === -1) {
+      this.icon = this.icons[this.icons.length - 1][1];
+    }
+    const currentPercent = Math.round(
+      (1 - (remaining % this.iconLoopDuration) / this.iconLoopDuration) * 100
+    );
+    for (const [percent, icon] of this.icons) {
+      if (percent - 1 < currentPercent) {
+        this.icon = icon;
+        return;
+      }
+    }
+    this.icon = this.icons[0][1];
   }
 
   protected render(): TemplateResult | void {
     return html`
-      <ha-card .header="${this._config.name}">
+      <ha-card .header="${this.config.name}">
         <div class="timer">
           ${this.icon
             ? html`

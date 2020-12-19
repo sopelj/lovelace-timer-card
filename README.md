@@ -2,29 +2,90 @@
 
 [![GitHub Release](https://img.shields.io/github/release/sopelj/lovelace-timer-card.svg?style=for-the-badge)](https://github.com/sopelj/lovelace-timer-card/releases)
 [![License](https://img.shields.io/github/license/sopelj/lovelace-timer-card.svg?style=for-the-badge)](LICENSE.md)
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 ![Project Maintenance](https://img.shields.io/maintenance/yes/2020.svg?style=for-the-badge)
 
 A widget to display timers in a larger more visible maner than the standard entity card whilst still displaying a realtime countdown. None of the other options I tried would refresh the display quick enough.
-
-_Please ⭐️ this repo if you find it useful_
 
 ![Example](./example.png)
 
 ## Options
 
-| Name   | Type   | Requirement  | Description                                | Default                  |
-| ------ | ------ | ------------ | ------------------------------------------ | ------------------------ |
-| type   | string | **Required** | `custom:timer-card`                        |                          |
-| entity | string | **Required** | Your timer entity                          |                          |
-| name   | string | **Optional** | Header. Set to `false` to disable          | Entity name              |
-| icon   | string | **Optional** | Icon to display. Set to `false` to disable | Entity icon or mdi:timer |
+| Name           | Type    | Requirement  | Description                                | Default                  |
+| -------------- | ------- | ------------ | ------------------------------------------ | ------------------------ |
+| type           | string  | **Required** | `custom:timer-card`                        |                          |
+| entity         | string  | **Required** | Your timer entity                          |                          |
+| name           | string  | **Optional** | Header. Set to `false` to disable          | Entity name              |
+| icons          | `icons` | **Optional** | List of icons to show (see below)          | - icon: 'mdi:timer'      |
+|                |         |              |                                            |   percent: 0             |
+| loop_duration  | number  | **Optional** | Length of a single loop in seconds         | Total seconds in timer   |
 
-## Installation with Hacs
+### Icons
+
+Note: **These can't be changed as of yet in the visual editor. Coming soon**
+
+Icons is a way to set multiple icons during the duration of the timer.
+The percent option is at what percent of a loop this icon will be displayed.
+The length of the loop can be changed with the `loop_duration` option.
+The default value is the entire duration of the time, so only one loop will take place.
+
+This allows you to for example change the icon when the timer is almost done (or done)
+
+```yaml
+entity: timer.tea
+icons:
+  - icon: 'mdi:kettle-outline'
+    percent: 0
+  - icon: 'mdi:kettle-steam-outline'
+    percent: 90
+```
+
+For example if you wanted to have a stopwatch style animation you could do something like this:
+
+```yaml
+entity: timer.my_timer
+loop_duration: 60
+icons:
+  - icon: 'mdi:clock-time-twelve-outline'
+    percent: 0
+  - icon: 'mdi:clock-time-three-outline'
+    percent: 25
+  - icon: 'mdi:clock-time-six-outline'
+    percent: 50
+  - icon: 'mdi:clock-time-nine-outline'
+    percent: 75
+  - icon: 'mdi:clock-time-twelve-outline'
+    percent: 100
+```
+
+## Installation
+
+### Add to resources
 
 ```yaml
 - url: /hacsfiles/lovelace-timer-card/timer-card.js
   type: module
+```
+
+### Add to Lovelace
+
+Just add the card to your lovelace. It might look something like this:
+
+```yaml
+- type: custom:timer-card
+  entity: timer.tea
+```
+
+You might want to only show active timers too. So you could use it in conjunction with the conditional card like this:
+
+```yaml
+- type: conditional
+  conditions:
+    - entity: timer.tea
+      state_not: "idle"
+  card:
+    type: custom:timer-card
+    entity: timer.tea
 ```
 
 ## Development
