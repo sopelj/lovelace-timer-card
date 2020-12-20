@@ -150,7 +150,7 @@ export class TimerCard extends LitElement {
 
   protected render(): TemplateResult | void {
     return html`
-      <ha-card .header="${this.config.name}">
+      <ha-card .header="${this.config.name}" class="${this.config?.name ? '': 'no-header'}">
         <div class="timer">
           ${this.icon
             ? html`
@@ -165,6 +165,10 @@ export class TimerCard extends LitElement {
 
   static get styles(): CSSResult {
     return css`
+      .no-header {
+        padding-top: 3rem;
+      }
+      
       .timer {
         display: flex;
         flex-direction: column;

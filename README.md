@@ -22,8 +22,6 @@ A widget to display timers in a larger more visible maner than the standard enti
 
 ### Icons
 
-Note: **These can't be changed as of yet in the visual editor. Coming soon**
-
 Icons is a way to set multiple icons during the duration of the timer.
 The percent option is at what percent of a loop this icon will be displayed.
 The length of the loop can be changed with the `loop_duration` option.
