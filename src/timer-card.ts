@@ -12,16 +12,14 @@ import {
 
 import {
   secondsToDuration,
-  timerTimeRemaining,
   durationToSeconds,
   stateIcon,
   HomeAssistant,
   LovelaceCardEditor,
+  timerTimeRemaining,
 } from 'custom-card-helpers';
 
-import { HassEntity } from 'home-assistant-js-websocket';
-
-import { TimerCardConfig } from './types';
+import {AlexaTimer, GoogleTimer, Timer, TimerCardConfig} from './types';
 
 import './editor';
 
@@ -30,7 +28,7 @@ import './editor';
 (window as Window).customCards.push({
   type: 'timer-card',
   name: 'Timer Card',
-  description: 'A simple widget to display a timer in lovelace',
+  description: 'A widget to display timers in real time in lovelace',
 });
 
 @customElement('timer-card')
@@ -49,11 +47,8 @@ export class TimerCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   
   @internalProperty() private config!: TimerCardConfig;
-  @internalProperty() private message?: string;
-  @internalProperty() private icon?: string;
   @internalProperty() private icons: Array<[number, string]> = [];
-  @internalProperty() private duration = 0;
-  @internalProperty() private iconLoopDuration = 1;
+  @internalProperty() private timers: Timer[] = [];
 
   private _handle?: number = 0;
 
@@ -72,7 +67,7 @@ export class TimerCard extends LitElement {
     }
     if (config.icons && config.icons.length >= 1) {
       this.icons = config.icons.map((x): [number, string] => {
-        return [x.percent || 0, x.icon]
+        return [x.percent || 0, x.icon];
       }).sort((a, b) => (a[0] > b[0]) ? -1 : 1);
     } else {
       this.icons = [[0, 'mdi:timer']];
@@ -90,20 +85,67 @@ export class TimerCard extends LitElement {
       const stateObj = this.hass.states[this.config.entity];
       const oldHass = changedProps.get('hass') as this['hass'];
       const oldStateObj = oldHass ? oldHass.states[this.config.entity] : undefined;
+
       if (! this.icons || this.icons.length === 0) {
         this.icons = [[0, stateIcon(this.hass.states[this.config.entity])]];
       }
 
       if (oldStateObj !== stateObj) {
-        this.duration = durationToSeconds(stateObj.attributes.duration);
-        this.iconLoopDuration = this.config.loop_duration ?? this.duration;
-        this._startInterval(stateObj);
+        this._updateTimers(stateObj);
+        this._startInterval();
       } else if (!stateObj) {
-        this.duration = 0;
-        this.iconLoopDuration = 0;
-        this._updateIcon(-1);
+        this.timers = [];
         this._clearInterval();
       }
+    }
+  }
+
+  private _updateTimers(stateObj): void {
+    let duration;
+    this.timers = [];
+
+    if (stateObj.attributes.timers) {
+      // Google Home Timer(s) (Can be multiple...)
+      const googleTimers: GoogleTimer[] = stateObj.attributes.timers || [];
+      for (const timer of googleTimers) {
+        duration = durationToSeconds(timer.duration);
+        this.timers.push({
+          duration: timer.duration,
+          remaining: duration,
+          loopDuration: this.config.loop_duration ?? duration,
+          startTime: timer.fire_time - duration,
+          message: timer.status,
+          active: timer.status == 'set',
+        });
+      }
+    } else if (stateObj.attributes.sorted_all) {
+      // This is an Alexa Timer
+      const now = new Date().getTime();
+      const alexaTimers: AlexaTimer[] = stateObj.attributes.sorted_all || [];
+      for (const timer of alexaTimers) {
+        duration = (now - timer.triggerTime) + timer.remainingTime;
+        this.timers.push({
+          duration: duration,
+          loopDuration: this.config.loop_duration ?? duration,
+          remaining: duration,
+          startTime: timer.triggerTime,
+          message: timer.status,
+          active: timer.status == 'ON',
+        });
+      }
+    } else {
+      // Standard Home Assistant Timer
+      const active = stateObj.state == "active";
+      const remaining = active ? timerTimeRemaining(stateObj) : 0;
+      duration = durationToSeconds(stateObj.attributes.duration);
+      this.timers.push({
+        duration: duration,
+        loopDuration: this.config.loop_duration ?? duration,
+        remaining: remaining,
+        startTime: Math.round(Date.now() / 1000),
+        message: stateObj.state,
+        active: active,
+      });
     }
   }
 
@@ -114,59 +156,83 @@ export class TimerCard extends LitElement {
     }
   }
 
-  private _startInterval(stateObj: HassEntity): void {
+  private _startInterval(): void {
     this._clearInterval();
-
-    if (stateObj.state === 'active') {
-      this._updateRemaining(stateObj);
-      this._handle = window.setInterval(() => this._updateRemaining(stateObj), 1000);
-    } else {
-      this._updateIcon(-1);
-      this.message = stateObj.state;
+    this._updateRemaining();
+    if (Object.values(this.timers).some(t => t.active)) {
+      this._handle = window.setInterval(() => this._updateRemaining(), 1000);
     }
   }
 
-  private _updateRemaining(stateObj: HassEntity): void {
-    const remaining = timerTimeRemaining(stateObj);
-    this._updateIcon(remaining);
-    this.message = secondsToDuration(remaining);
+  private _updateRemaining(): void {
+    const timers: Timer[] = [];
+    for (const timer of this.timers) {
+      const remaining = this._timerTimeRemaining(timer);
+      timer.icon = this._updateIcon(remaining, timer.loopDuration);
+      timer.message = secondsToDuration(remaining) || 'Done';
+      if (remaining) {
+        timers.push(timer);
+      }
+    }
+    this.timers = [...timers];
   }
 
-  private _updateIcon(remaining: number): void {
+  private _timerTimeRemaining(timer: Timer): number {
+    let timeRemaining = 0;
+    if (timer.active) {
+      const now = Math.round(Date.now() / 1000);
+      timeRemaining = Math.max(timer.remaining - (now - timer.startTime), 0);
+    }
+    return timeRemaining;
+  }
+
+  private _updateIcon(remaining: number, loopDuration: number): string {
+    let icon = this.icons[0][1];
     if (this.icons?.length === 1 || remaining === -1) {
-      this.icon = this.icons[this.icons.length - 1][1];
+      icon = this.icons[this.icons.length - 1][1];
     }
     const currentPercent = Math.round(
-      (1 - (remaining % this.iconLoopDuration) / this.iconLoopDuration) * 100
+      (1 - (remaining % loopDuration) / loopDuration) * 100
     );
     for (const [percent, icon] of this.icons) {
       if (percent - 1 < currentPercent) {
-        this.icon = icon;
-        return;
+        return icon;
       }
     }
-    this.icon = this.icons[0][1];
+    return icon;
   }
 
   protected render(): TemplateResult | void {
     return html`
-      <ha-card .header="${this.config.name}" class="${this.config?.name ? '': 'no-header'}">
-        <div class="timer">
-          ${this.icon
-            ? html`
-                <ha-icon class="timer__icon" icon="${this.icon}"></ha-icon>
-              `
-            : ''}
-          <div class="timer__message">${this.message}</div>
-        </div>
+      <ha-card .header="${this.config.name}">
+        ${Object.values(this.timers).map(timer => html`
+          <div class="timer">
+            ${timer.icon
+              ? html`
+                  <ha-icon class="timer__icon" icon="${timer.icon}"></ha-icon>
+                `
+              : ''}
+            <div class="timer__message">${timer.message}</div>
+          </div>
+        `)}
       </ha-card>
     `;
   }
 
   static get styles(): CSSResult {
     return css`
-      .no-header {
-        padding-top: 3rem;
+      .type-custom-timer-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        padding-bottom: 1rem;
+      }
+
+      .card-header {
+        order: -1;
+        flex: 0 100%;
+        padding-bottom: 0;
       }
       
       .timer {
@@ -174,12 +240,11 @@ export class TimerCard extends LitElement {
         flex-direction: column;
         flex-wrap: wrap;
         align-items: center;
-        padding: 12px 1rem 1rem;
+        padding: 1rem;
       }
 
       .timer__icon {
-        transform: scale(5);
-        margin-bottom: 48px;
+        --mdc-icon-size: 80px;
       }
 
       .timer__message {

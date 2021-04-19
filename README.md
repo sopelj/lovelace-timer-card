@@ -5,7 +5,11 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 ![Project Maintenance](https://img.shields.io/maintenance/yes/2020.svg?style=for-the-badge)
 
-A widget to display timers in a larger more visible maner than the standard entity card whilst still displaying a realtime countdown. None of the other options I tried would refresh the display quick enough.
+A widget to display timers in a larger more visible manner than the standard entity card whilst still displaying a realtime countdown. None of the other options I tried would refresh the display quick enough.
+
+This card can also display Timer(s) from the [Google Home integration](https://github.com/leikoilja/ha-google-home).
+
+It should also theoretically work with Alexa Timers from the [Alexa Media Player Inetgration](https://github.com/custom-components/alexa_media_player), but I don't have Alexa and have been unable to test thus far.
 
 ![Example](./example.png)
 

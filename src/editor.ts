@@ -111,7 +111,11 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
     }
 
     // Filter only timers
-    const entities = Object.keys(this.hass.states).filter(eid => eid.substr(0, eid.indexOf('.')) === 'timer');
+    const entities = Object.keys(this.hass.states).filter(eid => (
+      eid.substr(0, eid.indexOf('.')) === 'timer' || 
+      eid.endsWith('_timers') || 
+      eid.endsWith('_next_timer')
+    ));
     const icons = this._config?.icons || [];
     return html`
       <div class="card-config">

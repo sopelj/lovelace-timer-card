@@ -1,6 +1,6 @@
 {
   "name": "timer-card",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Lovelace timer-card",
   "keywords": [
     "home-assistant",
@@ -39,7 +39,7 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.1.4",
-    "prettier": "^1.19.1",
+    "prettier": "^2.2.1",
     "rollup": "^1.32.1",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-commonjs": "^10.1.0",
