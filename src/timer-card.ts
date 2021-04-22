@@ -118,11 +118,12 @@ export class TimerCard extends LitElement {
           active: timer.status == 'set',
         });
       }
-    } else if (stateObj.attributes.sorted_all) {
+    } else if (stateObj.attributes.sorted_active) {
       // This is an Alexa Timer
       const now = new Date().getTime();
-      const alexaTimers: AlexaTimer[] = stateObj.attributes.sorted_all || [];
-      for (const timer of alexaTimers) {
+      const alexaTimers: [string, AlexaTimer][] = stateObj.attributes.sorted_active || [];
+      for (const timerInfo of alexaTimers) {
+        const timer = timerInfo[1];
         duration = (now - timer.triggerTime) + timer.remainingTime;
         this.timers.push({
           duration: duration,
@@ -205,16 +206,18 @@ export class TimerCard extends LitElement {
   protected render(): TemplateResult | void {
     return html`
       <ha-card .header="${this.config.name}">
-        ${Object.values(this.timers).map(timer => html`
-          <div class="timer">
-            ${timer.icon
-              ? html`
-                  <ha-icon class="timer__icon" icon="${timer.icon}"></ha-icon>
-                `
-              : ''}
-            <div class="timer__message">${timer.message}</div>
-          </div>
-        `)}
+        ${this.timers.length ? 
+          this.timers.map(timer => html`
+            <div class="timer">
+              ${timer.icon
+                ? html`
+                    <ha-icon class="timer__icon" icon="${timer.icon}"></ha-icon>
+                  `
+                : ''}
+              <div class="timer__message">${timer.message}</div>
+            </div>
+          `) : html`<div class="no-timers">No active timers</div>`
+        }
       </ha-card>
     `;
   }
@@ -254,6 +257,10 @@ export class TimerCard extends LitElement {
 
       .timer__message:first-letter {
         text-transform: capitalize;
+      }
+
+      .no-timers {
+        padding-top: 1rem;
       }
     `;
   }
