@@ -30,8 +30,8 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
     fireEvent(this, 'config-changed', { config: newConfig });
   }
 
-  get _entity(): string {
-    return this._config?.entity || '';
+  get _entities(): string {
+    return this._config?.entities || [this._entity];
   }
 
   get _name(): string | boolean {
@@ -118,6 +118,8 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
       eid.endsWith('_next_timer')
     ));
     const icons = this._config?.icons || [];
+    const entity = this._config?.entity;
+    const selectedEntities = this._config?.entities || entity ? [entity] : [];
     return html`
       <div class="card-config">
         <div class="options">
@@ -130,6 +132,34 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
               ></paper-input>
           </div>
           <div class="values">
+            <h2>Entities</h2>
+            ${selectedEntities.map((entity, index) => html`
+            <div class="icon-row">
+              <ha-icon class="icon" icon="${icon.icon}"></ha-icon>
+              <paper-input
+                  label="Icon"
+                  .value=${icon.icon}
+                  .iconIndex=${index}
+                  .configValue=${'icon'}
+                  @value-changed=${this._updateIconRow}
+              ></paper-input>
+              <paper-input
+                  label="Percent"
+                  class="percent-input"
+                  .value=${icon.percent}
+                  .iconIndex=${index}
+                  .configValue=${'percent'}
+                  @value-changed=${this._updateIconRow}
+              ></paper-input>
+              <ha-icon 
+                icon="mdi:close" ç
+                @click=${this._removeIconRow} 
+                .iconIndex=${index} 
+                title="Remove" 
+                class="remove-icon-row"
+              ></ha-icon>
+            </div>
+          `)}
             <paper-dropdown-menu
               label="Entity (Required)"
               @value-changed=${this._valueChanged}

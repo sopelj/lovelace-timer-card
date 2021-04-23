@@ -36,9 +36,10 @@ export interface AlexaTimer {
 
 export interface TimerCardConfig extends LovelaceCardConfig {
   type: string;
-  entity: string;
+  entity?: string;
+  entities?: string[];
   name?: string | boolean;
-  icons?: Array<IconTime>;
+  icons?: IconTime[];
   loop_duration?: number;
 }
 
