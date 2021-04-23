@@ -120,16 +120,16 @@ export class TimerCard extends LitElement {
       }
     } else if (stateObj.attributes.sorted_active) {
       // This is an Alexa Timer
-      const now = new Date().getTime();
-      const alexaTimers: [string, AlexaTimer][] = stateObj.attributes.sorted_active || [];
+      const alexaTimers: [string, AlexaTimer][] = JSON.parse(stateObj.attributes.sorted_active) || [];
       for (const timerInfo of alexaTimers) {
         const timer = timerInfo[1];
-        duration = (now - timer.triggerTime) + timer.remainingTime;
+        const remaining = Math.round(timer.remainingTime / 1000);
+        const startTime = Math.round((timer.triggerTime - timer.remainingTime) / 1000);
         this.timers.push({
-          duration: duration,
-          loopDuration: this.config.loop_duration ?? duration,
-          remaining: duration,
-          startTime: timer.triggerTime,
+          duration: secondsToDuration(remaining),
+          loopDuration: this.config.loop_duration ?? remaining,
+          remaining: remaining,
+          startTime: startTime,
           message: timer.status,
           active: timer.status == 'ON',
         });
