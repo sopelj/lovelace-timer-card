@@ -31,6 +31,10 @@ import './editor';
   description: 'A widget to display timers in real time in lovelace',
 });
 
+const parseEntityId = (entityId: string): string => {
+  return entityId.substr(entityId.indexOf('.') + 1).replace(/[-_\.]/, ' ');
+};
+
 @customElement('timer-card')
 export class TimerCard extends LitElement {
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
@@ -74,7 +78,7 @@ export class TimerCard extends LitElement {
     }
     this.config = {
       ...config,
-      name: config.name === false ? undefined : config.name,
+      name: config.name,
     };
   }
 
@@ -85,6 +89,10 @@ export class TimerCard extends LitElement {
       const stateObj = this.hass.states[this.config.entity];
       const oldHass = changedProps.get('hass') as this['hass'];
       const oldStateObj = oldHass ? oldHass.states[this.config.entity] : undefined;
+      console.log(this.config.name, stateObj);
+      if (!this.config.name && this.config.name !== false) {
+        this.config.name = stateObj.attributes && stateObj.attributes.friendly_name ? stateObj.attributes.friendly_name : parseEntityId(stateObj.entity_id);
+      }
 
       if (! this.icons || this.icons.length === 0) {
         this.icons = [[0, stateIcon(this.hass.states[this.config.entity])]];
@@ -205,7 +213,8 @@ export class TimerCard extends LitElement {
 
   protected render(): TemplateResult | void {
     return html`
-      <ha-card .header="${this.config.name}">
+      <ha-card>
+        ${this.config.name ? html`<div class="title">${this.config.name}</div>` : ''}
         ${this.timers.length ? 
           this.timers.map(timer => html`
             <div class="timer">
@@ -232,9 +241,13 @@ export class TimerCard extends LitElement {
         padding-bottom: 1rem;
       }
 
-      .card-header {
-        order: -1;
-        flex: 0 100%;
+      .title {
+        font-size: 24px;
+        font-size: var(--st-font-size-title, var(--ha-card-header-font-size, 24px));
+        line-height: 24px;
+        line-height: var(--st-font-size-title, var(--ha-card-header-font-size, 24px));
+        width: 100%;
+        padding: 12px 16px 16px;
         padding-bottom: 0;
       }
       
@@ -255,7 +268,8 @@ export class TimerCard extends LitElement {
         font-size: 28px;
       }
 
-      .timer__message:first-letter {
+      .timer__message:first-letter,
+      .title {
         text-transform: capitalize;
       }
 

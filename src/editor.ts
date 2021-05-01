@@ -35,7 +35,8 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
   }
 
   get _name(): string | boolean {
-    return this._config?.name || '';
+    const name = this._config?.name;
+    return name === false || name === 'false' ?  false : this._config?.name || '';
   }
 
   private _addIconRow(): void {
@@ -93,7 +94,7 @@ export class TimerCardEditor extends LitElement implements LovelaceCardEditor {
   private _updateConfig(key: string, value: any): void {
     if (key && this._config) {
       if (value === '') {
-        delete this._config[value];
+        delete this._config[key];
       } else {
         this._config = {
           ...this._config,
