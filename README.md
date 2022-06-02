@@ -2,8 +2,8 @@
 
 [![GitHub Release](https://img.shields.io/github/release/sopelj/lovelace-timer-card.svg?style=for-the-badge)](https://github.com/sopelj/lovelace-timer-card/releases)
 [![License](https://img.shields.io/github/license/sopelj/lovelace-timer-card.svg?style=for-the-badge)](LICENSE.md)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
-![Project Maintenance](https://img.shields.io/maintenance/yes/2021.svg?style=for-the-badge)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+![Project Maintenance](https://img.shields.io/maintenance/yes/2022.svg?style=for-the-badge)
 
 A widget to display timers in a larger more visible manner than the standard entity card whilst still displaying a realtime countdown. None of the other options I tried would refresh the display quick enough.
 
